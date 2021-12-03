@@ -1,0 +1,4 @@
+= RemoteImageView
+François Lamboley <fload@me.com>
+
+Yet another Remote Image View for `UIKit` (courtesy of Togever).
