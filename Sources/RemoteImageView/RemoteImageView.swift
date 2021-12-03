@@ -135,12 +135,12 @@ public final class RemoteImageView : UIView {
 		viewModel.setImage(image, animated: animated)
 	}
 	
-	public func setImageFromURL(_ url: URL, animateInitialChange: Bool = false, animateDidLoadChange: Bool = true) {
-		setImageFromURLRequest(URLRequest(url: url), animateInitialChange: animateInitialChange, animateDidLoadChange: animateDidLoadChange)
+	public func setImageFromURL(_ url: URL?, useMemoryCache: Bool? = nil, animateInitialChange: Bool = false, animateDidLoadChange: Bool = true) {
+		setImageFromURLRequest(url.flatMap{ URLRequest(url: $0) }, useMemoryCache: useMemoryCache, animateInitialChange: animateInitialChange, animateDidLoadChange: animateDidLoadChange)
 	}
 	
-	public func setImageFromURLRequest(_ urlRequest: URLRequest, animateInitialChange: Bool = false, animateDidLoadChange: Bool = true) {
-		viewModel.setImageFromURLRequest(urlRequest, animateInitialChange: animateInitialChange, animateDidLoadChange: animateDidLoadChange)
+	public func setImageFromURLRequest(_ urlRequest: URLRequest?, useMemoryCache: Bool? = nil, animateInitialChange: Bool = false, animateDidLoadChange: Bool = true) {
+		viewModel.setImageFromURLRequest(urlRequest, useMemoryCache: useMemoryCache, animateInitialChange: animateInitialChange, animateDidLoadChange: animateDidLoadChange)
 	}
 		
 	/* ***************

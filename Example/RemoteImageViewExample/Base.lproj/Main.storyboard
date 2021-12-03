@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="19455" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" useSafeAreas="YES" colorMatched="YES" initialViewController="BYZ-38-t0r">
+    <device id="retina6_1" orientation="portrait" appearance="light"/>
+    <dependencies>
+        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="19454"/>
+        <capability name="Safe area layout guides" minToolsVersion="9.0"/>
+        <capability name="System colors in document resources" minToolsVersion="11.0"/>
+        <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
+    </dependencies>
+    <scenes>
+        <!--View Controller-->
+        <scene sceneID="tne-QT-ifu">
+            <objects>
+                <viewController id="BYZ-38-t0r" customClass="ViewController" customModule="RemoteImageViewExample" customModuleProvider="target" sceneMemberID="viewController">
+                    <view key="view" contentMode="scaleToFill" id="8bC-Xf-vdC">
+                        <rect key="frame" x="0.0" y="0.0" width="414" height="896"/>
+                        <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                        <subviews>
+                            <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="LWr-0d-7ja" customClass="RemoteImageView" customModule="RemoteImageView">
+                                <rect key="frame" x="8" y="44" width="398" height="530.5"/>
+                                <color key="backgroundColor" systemColor="systemBackgroundColor"/>
+                                <constraints>
+                                    <constraint firstAttribute="width" secondItem="LWr-0d-7ja" secondAttribute="height" multiplier="3:4" id="G2B-Wv-K59"/>
+                                </constraints>
+                            </view>
+                            <textField opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="left" contentVerticalAlignment="center" text="https://example.invalid/link" borderStyle="roundedRect" textAlignment="natural" minimumFontSize="17" translatesAutoresizingMaskIntoConstraints="NO" id="xmh-s6-jBe">
+                                <rect key="frame" x="20" y="582.5" width="374" height="34"/>
+                                <fontDescription key="fontDescription" type="system" pointSize="14"/>
+                                <textInputTraits key="textInputTraits" textContentType="url"/>
+                            </textField>
+                            <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="Vpp-gg-YvG">
+                                <rect key="frame" x="20" y="624.5" width="183" height="31"/>
+                                <state key="normal" title="Button"/>
+                                <buttonConfiguration key="configuration" style="plain" title="Random"/>
+                                <connections>
+                                    <action selector="tappedRandomButton:" destination="BYZ-38-t0r" eventType="touchUpInside" id="ZUO-Xp-PHs"/>
+                                </connections>
+                            </button>
+                            <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="XPF-IG-NwJ">
+                                <rect key="frame" x="211" y="624.5" width="183" height="31"/>
+                                <state key="normal" title="Button"/>
+                                <buttonConfiguration key="configuration" style="plain" title="Use TextField"/>
+                                <connections>
+                                    <action selector="tappedUseTextField:" destination="BYZ-38-t0r" eventType="touchUpInside" id="XzD-RA-oSA"/>
+                                </connections>
+                            </button>
+                        </subviews>
+                        <viewLayoutGuide key="safeArea" id="6Tk-OE-BBY"/>
+                        <color key="backgroundColor" systemColor="systemBackgroundColor"/>
+                        <constraints>
+                            <constraint firstItem="XPF-IG-NwJ" firstAttribute="leading" secondItem="Vpp-gg-YvG" secondAttribute="trailing" constant="8" symbolic="YES" id="6QI-A6-5gc"/>
+                            <constraint firstItem="xmh-s6-jBe" firstAttribute="top" secondItem="LWr-0d-7ja" secondAttribute="bottom" constant="8" symbolic="YES" id="Ele-t1-4xL"/>
+                            <constraint firstItem="6Tk-OE-BBY" firstAttribute="trailing" secondItem="LWr-0d-7ja" secondAttribute="trailing" constant="8" id="FrI-fw-Ynd"/>
+                            <constraint firstItem="Vpp-gg-YvG" firstAttribute="top" secondItem="xmh-s6-jBe" secondAttribute="bottom" constant="8" symbolic="YES" id="KqB-Wv-zm7"/>
+                            <constraint firstItem="6Tk-OE-BBY" firstAttribute="trailing" secondItem="xmh-s6-jBe" secondAttribute="trailing" constant="20" id="SAJ-pm-UBz"/>
+                            <constraint firstItem="LWr-0d-7ja" firstAttribute="top" secondItem="6Tk-OE-BBY" secondAttribute="top" id="TGo-rG-nsK"/>
+                            <constraint firstItem="Vpp-gg-YvG" firstAttribute="leading" secondItem="6Tk-OE-BBY" secondAttribute="leading" constant="20" id="Tx5-9S-AFX"/>
+                            <constraint firstItem="LWr-0d-7ja" firstAttribute="leading" secondItem="6Tk-OE-BBY" secondAttribute="leading" constant="8" id="UlF-Lr-QF5"/>
+                            <constraint firstItem="XPF-IG-NwJ" firstAttribute="top" secondItem="xmh-s6-jBe" secondAttribute="bottom" constant="8" symbolic="YES" id="apB-fZ-Xuh"/>
+                            <constraint firstItem="LWr-0d-7ja" firstAttribute="width" secondItem="LWr-0d-7ja" secondAttribute="height" multiplier="3:4" id="ltP-a5-gSz"/>
+                            <constraint firstItem="xmh-s6-jBe" firstAttribute="leading" secondItem="6Tk-OE-BBY" secondAttribute="leading" constant="20" id="o36-JC-aJY"/>
+                            <constraint firstItem="XPF-IG-NwJ" firstAttribute="width" secondItem="Vpp-gg-YvG" secondAttribute="width" id="tR0-Rv-0fL"/>
+                            <constraint firstItem="6Tk-OE-BBY" firstAttribute="trailing" secondItem="XPF-IG-NwJ" secondAttribute="trailing" constant="20" id="vU8-HD-71a"/>
+                        </constraints>
+                    </view>
+                    <connections>
+                        <outlet property="nilView" destination="mG7-iV-3cI" id="Uyv-hw-OmT"/>
+                        <outlet property="remoteImageView" destination="LWr-0d-7ja" id="c5n-l4-3Oy"/>
+                        <outlet property="textField" destination="xmh-s6-jBe" id="5tG-TP-KdA"/>
+                    </connections>
+                </viewController>
+                <placeholder placeholderIdentifier="IBFirstResponder" id="dkx-z0-nzr" sceneMemberID="firstResponder"/>
+                <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="mG7-iV-3cI" userLabel="Nil View">
+                    <rect key="frame" x="0.0" y="0.0" width="240" height="128"/>
+                    <subviews>
+                        <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Nil View" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="wc0-3S-DzY">
+                            <rect key="frame" x="76.5" y="49" width="87" height="30"/>
+                            <fontDescription key="fontDescription" style="UICTFontTextStyleTitle1"/>
+                            <color key="textColor" systemColor="systemBackgroundColor"/>
+                            <nil key="highlightedColor"/>
+                        </label>
+                    </subviews>
+                    <viewLayoutGuide key="safeArea" id="way-wQ-si8"/>
+                    <color key="backgroundColor" systemColor="labelColor"/>
+                    <constraints>
+                        <constraint firstItem="wc0-3S-DzY" firstAttribute="centerX" secondItem="mG7-iV-3cI" secondAttribute="centerX" id="6Fu-jP-7fS"/>
+                        <constraint firstItem="wc0-3S-DzY" firstAttribute="centerY" secondItem="mG7-iV-3cI" secondAttribute="centerY" id="KhT-bR-ah1"/>
+                    </constraints>
+                </view>
+            </objects>
+            <point key="canvasLocation" x="20" y="79"/>
+        </scene>
+    </scenes>
+    <resources>
+        <systemColor name="labelColor">
+            <color white="0.0" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+        </systemColor>
+        <systemColor name="systemBackgroundColor">
+            <color white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+        </systemColor>
+    </resources>
+</document>

@@ -1,0 +1,97 @@
+{
+  "object": {
+    "pins": [
+      {
+        "package": "HasResult",
+        "repositoryURL": "https://github.com/Frizlab/HasResult.git",
+        "state": {
+          "branch": null,
+          "revision": "a6eb60f65e33f9fb3ad425fea0838a05e298f270",
+          "version": "1.0.0"
+        }
+      },
+      {
+        "package": "OperationAwaiting",
+        "repositoryURL": "https://github.com/Frizlab/OperationAwaiting.git",
+        "state": {
+          "branch": null,
+          "revision": "acd525000677e358240e91813e07ab4e9413521b",
+          "version": "0.7.0"
+        }
+      },
+      {
+        "package": "RecursiveSyncDispatch",
+        "repositoryURL": "https://github.com/happn-tech/RecursiveSyncDispatch.git",
+        "state": {
+          "branch": null,
+          "revision": "04936f64e00d898006fc97b5ec938d8ce1fa14ea",
+          "version": "1.0.1"
+        }
+      },
+      {
+        "package": "RetryingOperation",
+        "repositoryURL": "https://github.com/happn-tech/RetryingOperation.git",
+        "state": {
+          "branch": null,
+          "revision": "4d69ec3aa4cb5d33e973fcfe01378a1d49e351f2",
+          "version": "1.1.7"
+        }
+      },
+      {
+        "package": "SemiSingleton",
+        "repositoryURL": "https://github.com/happn-tech/SemiSingleton.git",
+        "state": {
+          "branch": null,
+          "revision": "1c17d1ab5d6026b18b22b1aa3c0eca111b8a87db",
+          "version": "2.0.4"
+        }
+      },
+      {
+        "package": "stream-reader",
+        "repositoryURL": "https://github.com/Frizlab/stream-reader.git",
+        "state": {
+          "branch": null,
+          "revision": "09104092cb7e87dc6d1086d40c06d7606fc6cb94",
+          "version": "3.2.3"
+        }
+      },
+      {
+        "package": "swift-collections",
+        "repositoryURL": "https://github.com/apple/swift-collections",
+        "state": {
+          "branch": null,
+          "revision": "48254824bb4248676bf7ce56014ff57b142b77eb",
+          "version": "1.0.2"
+        }
+      },
+      {
+        "package": "swift-log",
+        "repositoryURL": "https://github.com/apple/swift-log.git",
+        "state": {
+          "branch": null,
+          "revision": "5d66f7ba25daf4f94100e7022febf3c75e37a6c7",
+          "version": "1.4.2"
+        }
+      },
+      {
+        "package": "swift-system",
+        "repositoryURL": "https://github.com/apple/swift-system.git",
+        "state": {
+          "branch": null,
+          "revision": "836bc4557b74fe6d2660218d56e3ce96aff76574",
+          "version": "1.1.1"
+        }
+      },
+      {
+        "package": "URLRequestOperation",
+        "repositoryURL": "https://github.com/happn-tech/URLRequestOperation.git",
+        "state": {
+          "branch": null,
+          "revision": "c88e993c1e97d45b27a164c9a40e8f9f18ed39f1",
+          "version": "2.0.0-alpha.11"
+        }
+      }
+    ]
+  },
+  "version": 1
+}

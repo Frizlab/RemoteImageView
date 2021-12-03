@@ -28,12 +28,19 @@ import URLRequestOperation
 public final class DefaultRemoteImageViewModel : RemoteImageViewModel {
 	
 	public let urlSession: URLSession
+	public let useMemoryCache: Bool
+	
 	public let animationDuration: TimeInterval
 	
 	public let imageState: CurrentValueSubject<(state: RemoteImageState, shouldAnimateChange: Bool), Never> = .init((.noImage, false))
 	
-	init(urlSession: URLSession = Conf.defaultURLSession, animationDuration: TimeInterval = Conf.defaultAnimationDuration) {
+	public init(
+		urlSession: URLSession = RemoteImageViewConfig.defaultURLSession,
+		useMemoryCache: Bool = RemoteImageViewConfig.defaultRemoteImageViewModelUsesMemoryCacheByDefault,
+		animationDuration: TimeInterval = RemoteImageViewConfig.defaultAnimationDuration)
+	{
 		self.urlSession = urlSession
+		self.useMemoryCache = useMemoryCache
 		self.animationDuration = animationDuration
 	}
 	
@@ -49,8 +56,13 @@ public final class DefaultRemoteImageViewModel : RemoteImageViewModel {
 		imageState.send((image.flatMap{ .loadedImage($0) } ?? .noImage, animated))
 	}
 	
-	public func setImageFromURLRequest(_ urlRequest: URLRequest, animateInitialChange: Bool, animateDidLoadChange: Bool) {
+	public func setImageFromURLRequest(_ urlRequest: URLRequest?, useMemoryCache: Bool?, animateInitialChange: Bool, animateDidLoadChange: Bool) {
 		assert(Thread.isMainThread)
+		
+		guard let urlRequest = urlRequest else {
+			setImage(nil, animated: animateInitialChange)
+			return
+		}
 		
 		if let currentlyLoadingURL = currentSetImageTask?.url {
 			guard currentlyLoadingURL != urlRequest.url else {
@@ -65,7 +77,7 @@ public final class DefaultRemoteImageViewModel : RemoteImageViewModel {
 			 * I highly doubt there is a case where this is untrue, and we need the URL as it is our task dictionary key. */
 			return imageState.send((.loadingError(RemoteImageViewError.noURLInRequest(urlRequest)), animateInitialChange))
 		}
-		if let image = Self.imagesCache.object(forKey: url as NSURL) {
+		if useMemoryCache ?? self.useMemoryCache, let image = Self.imagesCache.object(forKey: url as NSURL) {
 			return imageState.send((.loadedImage(image), animateInitialChange))
 		}
 		
@@ -92,7 +104,9 @@ public final class DefaultRemoteImageViewModel : RemoteImageViewModel {
 					if !Task.isCancelled {
 						imageState.send((.loadedImage(image), animateDidLoadChange))
 					}
-					Self.imagesCache.setObject(image, forKey: url as NSURL, cost: Int(image.size.width * image.size.height))
+					if useMemoryCache ?? self.useMemoryCache {
+						Self.imagesCache.setObject(image, forKey: url as NSURL, cost: Int(image.size.width * image.size.height))
+					}
 				} catch {
 					if !Task.isCancelled {
 						imageState.send((.loadingError(error), animateDidLoadChange))
@@ -101,6 +115,7 @@ public final class DefaultRemoteImageViewModel : RemoteImageViewModel {
 				if Self.imagesDownloads[url] === download {
 					Self.imagesDownloads[url] = nil
 				}
+				currentSetImageTask = nil
 			})
 		})
 	}

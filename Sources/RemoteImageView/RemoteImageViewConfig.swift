@@ -50,6 +50,10 @@ public enum RemoteImageViewConfig {
 	 
 	 When setting the variable to `true`, the loading will be cancelled as soon as no image view need the URL being loaded. */
 	public static var defaultRemoteImageViewModelCancelsImageDownloadsWhenNoRemoteImageNeedsIt = false
+	
+	/** Set to false to not use a memory cache for the given images. */
+	public static var defaultRemoteImageViewModelUsesMemoryCacheByDefault = true
+	
 }
 
 typealias Conf = RemoteImageViewConfig

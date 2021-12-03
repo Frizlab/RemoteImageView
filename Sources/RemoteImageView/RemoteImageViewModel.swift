@@ -27,7 +27,7 @@ public protocol RemoteImageViewModel {
 	var imageState: CurrentValueSubject<(state: RemoteImageState, shouldAnimateChange: Bool), Never> {get}
 	
 	func setImage(_ image: UIImage?, animated: Bool)
-	func setImageFromURLRequest(_ urlRequest: URLRequest, animateInitialChange: Bool, animateDidLoadChange: Bool)
+	func setImageFromURLRequest(_ urlRequest: URLRequest?, useMemoryCache: Bool?, animateInitialChange: Bool, animateDidLoadChange: Bool)
 	
 	/**
 	 Called by the remote image view when it updates its internal views, when animations can be expected.
