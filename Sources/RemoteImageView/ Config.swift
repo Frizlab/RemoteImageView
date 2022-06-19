@@ -22,7 +22,7 @@ public enum RemoteImageViewConfig {
 	public static var loggerSubsystem = "me.frizlab.remote-image-view"
 	
 	/** The default animation duration in the default remote image view model. */
-	public static var defaultAnimationDuration: TimeInterval = 0.25
+	public static var defaultAnimationDuration: TimeInterval = 0.35
 	
 	/** The default session to use for networking in the default remote image view model. */
 	public static var defaultURLSession: URLSession = .shared
@@ -31,7 +31,7 @@ public enum RemoteImageViewConfig {
 	 Whether the default remote image view model cancels the image downloads if no remote image views are showing the URL being downloaded.
 	 
 	 When a remote image view is asked to show a given URL, it will ask its view model to load the given URL.
-	 The view model will first check its cache, it the image is in it, it will return it directly.
+	 The view model will first check its cache, if the image is in it, it will return it directly.
 	 If not, it will check the currently loading images.
 	 If there is a loading operation for the given URL, it will await for its result and then return it.
 	 If not, it will start the loading operation, await its result and return it.
@@ -53,6 +53,13 @@ public enum RemoteImageViewConfig {
 	
 	/** Set to false to not use a memory cache for the given images. */
 	public static var defaultRemoteImageViewModelUsesMemoryCacheByDefault = true
+	
+	/**
+	 Queue the default remote image view model will use to parse the image it gets from the network.
+	 
+	 This will be the same for all the default remote image view models (shared queue).
+	 It is not customizable per image view model: all the models share the “downloads in progress” store. */
+	public static var defaultRemoteImageViewModelImageParseQueue = DispatchQueue(label: loggerSubsystem + ".image-parse-queue", qos: .background)
 	
 }
 

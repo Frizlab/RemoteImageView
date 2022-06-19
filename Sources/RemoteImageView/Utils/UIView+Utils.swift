@@ -21,7 +21,7 @@ import UIKit
 
 extension UIView {
 	
-	public convenience init(noAutoresizeWithFrame frame: CGRect, backgroundColor bgColor: UIColor? = nil) {
+	convenience init(noAutoresizeWithFrame frame: CGRect, backgroundColor bgColor: UIColor? = nil) {
 		self.init(frame: frame)
 		translatesAutoresizingMaskIntoConstraints = false
 		if let bgColor = bgColor {backgroundColor = bgColor}
@@ -32,17 +32,31 @@ extension UIView {
 	 
 	 If the added view uses autolayout (`translatesAutoresizingMaskIntoConstraints` is `false`), we add constraints so the subview always has its parent’s size.
 	 If not, we simply set the added view’s frame to self’s bounds. */
-	public func addFullSizedSubview(_ addedView: UIView, at index: Int? = nil) {
+	func addFullSizedSubview(_ addedView: UIView, topSpace: CGFloat? = 0, leadingSpace: CGFloat? = 0, bottomSpace: CGFloat? = 0, trailingSpace: CGFloat? = 0, at index: Int? = nil) {
 		if let index = index {insertSubview(addedView, at: index)}
 		else                 {addSubview(addedView)}
 		
+		let tVFL = (     topSpace == nil ? "" : "(T)-")
+		let lVFL = ( leadingSpace == nil ? "" : "(L)-")
+		let bVFL = (  bottomSpace == nil ? "" : "-(B)")
+		let rVFL = (trailingSpace == nil ? "" : "-(R)")
 		if !addedView.translatesAutoresizingMaskIntoConstraints {
 			NSLayoutConstraint.activate(
-				NSLayoutConstraint.constraints(withVisualFormat: "H:|[V]|", options: [], metrics: nil, views: ["V": addedView]) +
-				NSLayoutConstraint.constraints(withVisualFormat: "V:|[V]|", options: [], metrics: nil, views: ["V": addedView])
+				NSLayoutConstraint.constraints(withVisualFormat: "H:|-\(lVFL)[V]\(rVFL)-|", options: [], metrics: ["L": leadingSpace as Any, "R": trailingSpace as Any], views: ["V": addedView]) +
+				NSLayoutConstraint.constraints(withVisualFormat: "V:|-\(tVFL)[V]\(bVFL)-|", options: [], metrics: ["T":     topSpace as Any, "B":   bottomSpace as Any], views: ["V": addedView])
 			)
 		} else {
-			addedView.frame = bounds
+			let      topSpace =      topSpace ?? 0
+			let  leadingSpace =  leadingSpace ?? 0
+			let   bottomSpace =   bottomSpace ?? 0
+			let trailingSpace = trailingSpace ?? 0
+			let isLTR = UIView.userInterfaceLayoutDirection(for: semanticContentAttribute) == .leftToRight
+			addedView.frame = CGRect(
+				x: (isLTR ? leadingSpace : trailingSpace),
+				y: topSpace,
+				width: bounds.width - leadingSpace - trailingSpace,
+				height: bounds.height - topSpace - bottomSpace
+			)
 			if !translatesAutoresizingMaskIntoConstraints {
 				Logger.utils.info("Got a view which translates autoresizing mask into constraints to fill a \(Self.self), which does not.")
 			}

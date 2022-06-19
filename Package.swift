@@ -7,7 +7,7 @@ let package = Package(
 	platforms: [.macOS(.v12), .iOS(.v15), .tvOS(.v15), .watchOS(.v8)],
 	products: [.library(name: "RemoteImageView", targets: ["RemoteImageView"])],
 	dependencies: [
-		.package(url: "https://github.com/Frizlab/OperationAwaiting.git", from: "0.7.0"),
+		.package(url: "https://github.com/Frizlab/OperationAwaiting.git", from: "1.2.0-beta"),
 		.package(url: "https://github.com/happn-tech/URLRequestOperation.git", from: "2.0.0-alpha.10")
 	],
 	targets: [

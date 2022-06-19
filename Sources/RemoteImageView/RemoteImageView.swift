@@ -55,10 +55,11 @@ public final class RemoteImageView : UIView {
 		}
 		
 		switch (imageDelta > 0, nilDelta > 0, loadingDelta > 0, errorDelta > 0) {
-			case (true, false, false, false): return .showingImage
-			case (false, true, false, false): return .showingNil
-			case (false, false, true, false): return .showingLoading
-			case (false, false, false, true): return .showingError
+			case (false, false, false, false): return .showingNothing
+			case (true,  false, false, false): return .showingImage
+			case (false,  true, false, false): return .showingNil
+			case (false, false,  true, false): return .showingLoading
+			case (false, false, false,  true): return .showingError
 			default: return abs(viewImage.alpha) < 0.05 && viewNil == nil && viewLoading == nil && viewError == nil ? .showingNothing : .invalid
 		}
 	}
@@ -71,8 +72,7 @@ public final class RemoteImageView : UIView {
 	 _Dev note_: We’re using a lazy var to avoid initing the property in the init (there are two init methods).
 	 This property is thus technically a `var` and can be modified, but in spririt it is a `let`. */
 	public private(set) lazy var viewImage: UIImageView = {
-		let imageView = UIImageView(frame: bounds)
-		imageView.translatesAutoresizingMaskIntoConstraints = false
+		let imageView = UIImageView(noAutoresizeWithFrame: bounds)
 		imageView.contentMode = .scaleAspectFill
 		addFullSizedSubview(imageView)
 		return imageView
@@ -85,6 +85,7 @@ public final class RemoteImageView : UIView {
 			
 			guard let viewNil = viewNil else {return}
 			addFullSizedSubview(viewNil, at: 0)
+			updateSubviews(state: viewModel.imageState.value)
 		}
 	}
 	
@@ -95,6 +96,7 @@ public final class RemoteImageView : UIView {
 			
 			guard let viewLoading = viewLoading else {return}
 			addFullSizedSubview(viewLoading, at: 0)
+			updateSubviews(state: viewModel.imageState.value)
 		}
 	}
 	
@@ -105,6 +107,7 @@ public final class RemoteImageView : UIView {
 			
 			guard let viewError = viewError else {return}
 			addFullSizedSubview(viewError, at: 0)
+			updateSubviews(state: viewModel.imageState.value)
 		}
 	}
 	
@@ -131,6 +134,10 @@ public final class RemoteImageView : UIView {
 		updateViewModelBindings()
 	}
 	
+	public func setFakeLoading(animated: Bool = false) {
+		viewModel.setFakeLoading(animated: animated)
+	}
+	
 	public func setImage(_ image: UIImage?, animated: Bool = false) {
 		viewModel.setImage(image, animated: animated)
 	}
@@ -142,7 +149,7 @@ public final class RemoteImageView : UIView {
 	public func setImageFromURLRequest(_ urlRequest: URLRequest?, useMemoryCache: Bool? = nil, animateInitialChange: Bool = false, animateDidLoadChange: Bool = true) {
 		viewModel.setImageFromURLRequest(urlRequest, useMemoryCache: useMemoryCache, animateInitialChange: animateInitialChange, animateDidLoadChange: animateDidLoadChange)
 	}
-		
+	
 	/* ***************
 	   MARK: - Private
 	   *************** */
@@ -152,23 +159,23 @@ public final class RemoteImageView : UIView {
 	private func updateViewModelBindings() {
 		assert(Thread.isMainThread)
 		
-		updateSubviews()
+		updateSubviews(state: viewModel.imageState.value)
 		remoteImageStateObserver = viewModel.imageState
 			.receive(on: DispatchQueue.main)
-			.sink{ [weak self] _ in self?.updateSubviews() }
+			.sink{ [weak self] state in self?.updateSubviews(state: state) }
 	}
 	
-	private func updateSubviews() {
+	private func updateSubviews(state: (state: RemoteImageState, shouldAnimateChange: Bool)) {
 		assert(Thread.isMainThread)
-		switch viewModel.imageState.value {
-			case let (.noImage, animated):
+		switch state {
+			case let (.noImage(fakeLoading), animated) where !fakeLoading:
 				showNilSubview(animated: animated)
 				
 			case let (.loadedImage(image), animated):
 				viewImage.image = image /* Note: We do _not_ animate image change (yet?) */
 				showImageSubview(animated: animated)
 				
-			case let (.loading, animated):
+			case let (.loading, animated), let (.noImage, animated):
 				showLoadingSubview(animated: animated)
 				
 			case let (.loadingError, animated):

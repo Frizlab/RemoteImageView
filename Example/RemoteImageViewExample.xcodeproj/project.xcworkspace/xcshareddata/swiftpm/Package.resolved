@@ -15,13 +15,13 @@
         "repositoryURL": "https://github.com/Frizlab/OperationAwaiting.git",
         "state": {
           "branch": null,
-          "revision": "acd525000677e358240e91813e07ab4e9413521b",
-          "version": "0.7.0"
+          "revision": "a1c40b3e1fc6d837adee76d4fb924e27441151a3",
+          "version": "1.2.0-beta.2"
         }
       },
       {
         "package": "RecursiveSyncDispatch",
-        "repositoryURL": "https://github.com/happn-tech/RecursiveSyncDispatch.git",
+        "repositoryURL": "https://github.com/happn-app/RecursiveSyncDispatch.git",
         "state": {
           "branch": null,
           "revision": "04936f64e00d898006fc97b5ec938d8ce1fa14ea",
@@ -42,8 +42,8 @@
         "repositoryURL": "https://github.com/happn-tech/SemiSingleton.git",
         "state": {
           "branch": null,
-          "revision": "1c17d1ab5d6026b18b22b1aa3c0eca111b8a87db",
-          "version": "2.0.4"
+          "revision": "9459d45f4d4719c306b5e0534438eeaa18fad27e",
+          "version": "2.0.5"
         }
       },
       {

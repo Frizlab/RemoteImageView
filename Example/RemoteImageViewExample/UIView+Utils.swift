@@ -14,14 +14,17 @@ See the License for the specific language governing permissions and
 limitations under the License. */
 
 import Foundation
+import os.log
+import UIKit
 
 
 
-public enum RemoteImageViewError : Error {
+extension UIView {
 	
-	/** When a `URLRequest` with no `url` is given to be shown to a ``RemoteImageView``. */
-	case noURLInRequest(URLRequest)
+	convenience init(noAutoresizeWithFrame frame: CGRect, backgroundColor bgColor: UIColor? = nil) {
+		self.init(frame: frame)
+		translatesAutoresizingMaskIntoConstraints = false
+		if let bgColor = bgColor {backgroundColor = bgColor}
+	}
 	
 }
-
-typealias Err = RemoteImageViewError

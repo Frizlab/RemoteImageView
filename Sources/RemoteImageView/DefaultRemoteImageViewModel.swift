@@ -32,9 +32,10 @@ public final class DefaultRemoteImageViewModel : RemoteImageViewModel {
 	
 	public let animationDuration: TimeInterval
 	
-	public let imageState: CurrentValueSubject<(state: RemoteImageState, shouldAnimateChange: Bool), Never> = .init((.noImage, false))
+	public let imageState: CurrentValueSubject<(state: RemoteImageState, shouldAnimateChange: Bool), Never>
 	
 	public init(
+		fakeLoading: Bool = false,
 		urlSession: URLSession = RemoteImageViewConfig.defaultURLSession,
 		useMemoryCache: Bool = RemoteImageViewConfig.defaultRemoteImageViewModelUsesMemoryCacheByDefault,
 		animationDuration: TimeInterval = RemoteImageViewConfig.defaultAnimationDuration)
@@ -42,6 +43,8 @@ public final class DefaultRemoteImageViewModel : RemoteImageViewModel {
 		self.urlSession = urlSession
 		self.useMemoryCache = useMemoryCache
 		self.animationDuration = animationDuration
+		
+		self.imageState = .init((.noImage(fakeLoading: fakeLoading), false))
 	}
 	
 	deinit {
@@ -49,11 +52,18 @@ public final class DefaultRemoteImageViewModel : RemoteImageViewModel {
 		currentSetImageTask = nil
 	}
 	
+	public func setFakeLoading(animated: Bool) {
+		currentSetImageTask?.task.cancel()
+		currentSetImageTask = nil
+		
+		imageState.value = (.noImage(fakeLoading: true), animated)
+	}
+	
 	public func setImage(_ image: UIImage?, animated: Bool) {
 		currentSetImageTask?.task.cancel()
 		currentSetImageTask = nil
 		
-		imageState.send((image.flatMap{ .loadedImage($0) } ?? .noImage, animated))
+		imageState.value = (image.flatMap{ .loadedImage($0) } ?? .noImage(fakeLoading: false), animated)
 	}
 	
 	public func setImageFromURLRequest(_ urlRequest: URLRequest?, useMemoryCache: Bool?, animateInitialChange: Bool, animateDidLoadChange: Bool) {
@@ -75,13 +85,13 @@ public final class DefaultRemoteImageViewModel : RemoteImageViewModel {
 		guard let url = urlRequest.url else {
 			/* We assume a URLRequest with no URL is invalid.
 			 * I highly doubt there is a case where this is untrue, and we need the URL as it is our task dictionary key. */
-			return imageState.send((.loadingError(RemoteImageViewError.noURLInRequest(urlRequest)), animateInitialChange))
+			return imageState.value = (.loadingError(Err.noURLInRequest(urlRequest)), animateInitialChange)
 		}
 		if useMemoryCache ?? self.useMemoryCache, let image = Self.imagesCache.object(forKey: url as NSURL) {
-			return imageState.send((.loadedImage(image), animateInitialChange))
+			return imageState.value = (.loadedImage(image), animateInitialChange)
 		}
 		
-		imageState.send((.loading(urlRequest), animateInitialChange))
+		imageState.value = (.loading(urlRequest), animateInitialChange)
 		currentSetImageTask = (url, Task{
 			assert(Thread.isMainThread) /* I don’t really know why that’s true though. */
 			let download: Download
@@ -102,14 +112,14 @@ public final class DefaultRemoteImageViewModel : RemoteImageViewModel {
 				do {
 					let image = try await download.task.value
 					if !Task.isCancelled {
-						imageState.send((.loadedImage(image), animateDidLoadChange))
+						imageState.value = (.loadedImage(image), animateDidLoadChange)
 					}
 					if useMemoryCache ?? self.useMemoryCache {
 						Self.imagesCache.setObject(image, forKey: url as NSURL, cost: Int(image.size.width * image.size.height))
 					}
 				} catch {
 					if !Task.isCancelled {
-						imageState.send((.loadingError(error), animateDidLoadChange))
+						imageState.value = (.loadingError(error), animateDidLoadChange)
 					}
 				}
 				if Self.imagesDownloads[url] === download {
@@ -139,12 +149,12 @@ public final class DefaultRemoteImageViewModel : RemoteImageViewModel {
 		init(urlRequest: URLRequest) {
 			self.refCount = 1
 			
-			let op = URLRequestDataOperation.forImage(urlRequest: urlRequest)
+			let op = URLRequestDataOperation.forImage(urlRequest: urlRequest, resultProcessingDispatcher: Conf.defaultRemoteImageViewModelImageParseQueue)
 			/* We use detached because we do _not_ want the operation to be cancelled when the parent task is cancelled,
 			 * as this task can be reused (for instance if another remote image view downloads the same URL). */
 			self.task = Task.detached(priority: .low, operation: {
 				try await withTaskCancellationHandler(
-					operation: { try await op.startAsyncGetResult().result },
+					operation: { try await op.startAndGetResult().result },
 					onCancel: { op.cancel() }
 				)
 			})
