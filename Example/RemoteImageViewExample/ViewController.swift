@@ -42,6 +42,9 @@ class ViewController: UIViewController {
 		remoteImageView.viewLoading = UIView(noAutoresizeWithFrame: remoteImageView.bounds, backgroundColor: .lightGray)
 		remoteImageView.viewError = UIView(noAutoresizeWithFrame: remoteImageView.bounds, backgroundColor: .red)
 		
+		/* Set the content mode of the image view. */
+		remoteImageView.viewImage.contentMode = .scaleAspectFill /* This is the default. */
+		
 		remoteImageView.viewModel.imageState
 			.map{ state in
 				switch state {
