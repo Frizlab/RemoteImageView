@@ -27,20 +27,17 @@ import URLRequestOperation
 @MainActor
 public final class DefaultRemoteImageViewModel : RemoteImageViewModel {
 	
-	public let urlSession: URLSession
 	public let useMemoryCache: Bool
 	
 	public let animationDuration: TimeInterval
 	
 	public let imageState: CurrentValueSubject<(state: RemoteImageState, shouldAnimateChange: Bool), Never>
 	
-	public init(
+	public nonisolated init(
 		fakeLoading: Bool = false,
-		urlSession: URLSession = RemoteImageViewConfig.defaultURLSession,
 		useMemoryCache: Bool = RemoteImageViewConfig.defaultRemoteImageViewModelUsesMemoryCacheByDefault,
 		animationDuration: TimeInterval = RemoteImageViewConfig.defaultAnimationDuration)
 	{
-		self.urlSession = urlSession
 		self.useMemoryCache = useMemoryCache
 		self.animationDuration = animationDuration
 		
@@ -59,6 +56,13 @@ public final class DefaultRemoteImageViewModel : RemoteImageViewModel {
 		imageState.value = (.noImage(fakeLoading: true), animated)
 	}
 	
+	public func setError(_ error: Error, animated: Bool) {
+		currentSetImageTask?.task.cancel()
+		currentSetImageTask = nil
+		
+		imageState.value = (.loadingError(error), animated)
+	}
+	
 	public func setImage(_ image: UIImage?, animated: Bool) {
 		currentSetImageTask?.task.cancel()
 		currentSetImageTask = nil
@@ -66,46 +70,46 @@ public final class DefaultRemoteImageViewModel : RemoteImageViewModel {
 		imageState.value = (image.flatMap{ .loadedImage($0) } ?? .noImage(fakeLoading: false), animated)
 	}
 	
-	public func setImageFromURLRequest(_ urlRequest: URLRequest?, useMemoryCache: Bool?, animateInitialChange: Bool, animateDidLoadChange: Bool) {
+	public func setImageFromRequest(_ request: RemoteImageViewRequest?, useMemoryCache: Bool?, animateInitialChange: Bool, animateDidLoadChange: Bool) {
 		assert(Thread.isMainThread)
 		
-		guard let urlRequest = urlRequest else {
+		guard let request = request else {
 			setImage(nil, animated: animateInitialChange)
 			return
 		}
 		
-		if let currentlyLoadingURL = currentSetImageTask?.url {
-			guard currentlyLoadingURL != urlRequest.url else {
+		let cacheKey = request.rlCacheKey
+		if let currentlyLoadingCacheKey = currentSetImageTask?.cacheKey {
+			guard currentlyLoadingCacheKey != cacheKey else {
 				return
 			}
 			currentSetImageTask?.task.cancel()
 			currentSetImageTask = nil
 		}
 		
-		guard let url = urlRequest.url else {
-			/* We assume a URLRequest with no URL is invalid.
-			 * I highly doubt there is a case where this is untrue, and we need the URL as it is our task dictionary key. */
-			return imageState.value = (.loadingError(Err.noURLInRequest(urlRequest)), animateInitialChange)
-		}
-		if useMemoryCache ?? self.useMemoryCache, let image = Self.imagesCache.object(forKey: url as NSURL) {
+		if let cacheKey = cacheKey, useMemoryCache ?? self.useMemoryCache, let image = Self.imagesCache.object(forKey: AnyHashableObject(cacheKey)) {
 			return imageState.value = (.loadedImage(image), animateInitialChange)
 		}
 		
-		imageState.value = (.loading(urlRequest), animateInitialChange)
-		currentSetImageTask = (url, Task{
+		imageState.value = (.loading(request), animateInitialChange)
+		currentSetImageTask = (cacheKey, Task{
 			assert(Thread.isMainThread) /* I don’t really know why that’s true though. */
 			let download: Download
-			if let d = Self.imagesDownloads[url] {
-				download = d
-				d.retain()
+			if let cacheKey = cacheKey {
+				if let d = Self.imagesDownloads[cacheKey] {
+					download = d
+					d.retain()
+				} else {
+					download = Download(request: request)
+					Self.imagesDownloads[cacheKey] = download
+				}
 			} else {
-				download = Download(urlRequest: urlRequest)
-				Self.imagesDownloads[url] = download
+				download = Download(request: request, forceCancelOnReleased: true)
 			}
 			await withTaskCancellationHandler(handler: {
 				DispatchQueue.main.async{
-					if download.release() {
-						Self.imagesDownloads[url] = nil
+					if download.release(), let cacheKey = cacheKey {
+						Self.imagesDownloads[cacheKey] = nil
 					}
 				}
 			}, operation: {
@@ -114,61 +118,51 @@ public final class DefaultRemoteImageViewModel : RemoteImageViewModel {
 					if !Task.isCancelled {
 						imageState.value = (.loadedImage(image), animateDidLoadChange)
 					}
-					if useMemoryCache ?? self.useMemoryCache {
-						Self.imagesCache.setObject(image, forKey: url as NSURL, cost: Int(image.size.width * image.size.height))
+					if let cacheKey = cacheKey, useMemoryCache ?? self.useMemoryCache {
+						Self.imagesCache.setObject(image, forKey: AnyHashableObject(cacheKey), cost: Int(image.size.width * image.size.height))
 					}
 				} catch {
 					if !Task.isCancelled {
 						imageState.value = (.loadingError(error), animateDidLoadChange)
 					}
 				}
-				if Self.imagesDownloads[url] === download {
-					Self.imagesDownloads[url] = nil
+				if let cacheKey = cacheKey, Self.imagesDownloads[cacheKey] === download {
+					Self.imagesDownloads[cacheKey] = nil
 				}
 				currentSetImageTask = nil
 			})
 		})
 	}
 	
-	public func applyUIChanges(animatable: @MainActor @escaping () -> Void, cleanup: @MainActor @escaping () -> Void) {
-		assert(Thread.isMainThread)
-		UIView.animate(withDuration: Conf.defaultAnimationDuration, animations: { animatable() }, completion: { _ in cleanup() })
-	}
+	private var currentSetImageTask: (cacheKey: AnyHashable?, task: Task<Void, Never>)?
 	
-	private var currentSetImageTask: (url: URL, task: Task<Void, Never>)?
-	
-	private static var imagesDownloads = [URL: Download]()
-	private static var imagesCache = NSCache<NSURL, UIImage>()
+	private static var imagesDownloads = [AnyHashable: Download]()
+	private static var imagesCache = NSCache<AnyHashableObject, UIImage>()
 	
 	@MainActor
 	private final class Download {
 		
 		var task: Task<UIImage, Error>
+		let forceCancelOnReleased: Bool
 		var refCount: Int
 		
-		init(urlRequest: URLRequest) {
+		init(request: RemoteImageViewRequest, forceCancelOnReleased: Bool = false) {
 			self.refCount = 1
-			
-			let op = URLRequestDataOperation.forImage(urlRequest: urlRequest, resultProcessingDispatcher: Conf.defaultRemoteImageViewModelImageParseQueue)
+			self.forceCancelOnReleased = forceCancelOnReleased
 			/* We use detached because we do _not_ want the operation to be cancelled when the parent task is cancelled,
-			 * as this task can be reused (for instance if another remote image view downloads the same URL). */
-			self.task = Task.detached(priority: .low, operation: {
-				try await withTaskCancellationHandler(
-					operation: { try await op.startAndGetResult().result },
-					onCancel: { op.cancel() }
-				)
-			})
+			 *  as this task can be reused (for instance if another remote image view downloads the same URL). */
+			self.task = Task.detached(priority: .low, operation: request.load)
 		}
 		
 		func retain() {
-			guard Conf.defaultRemoteImageViewModelCancelsImageDownloadsWhenNoRemoteImageNeedsIt else {
+			guard forceCancelOnReleased || Conf.defaultRemoteImageViewModelCancelsImageDownloadsWhenNoRemoteImageNeedsIt else {
 				return
 			}
 			refCount += 1
 		}
 		
 		func release() -> Bool {
-			guard Conf.defaultRemoteImageViewModelCancelsImageDownloadsWhenNoRemoteImageNeedsIt else {
+			guard forceCancelOnReleased || Conf.defaultRemoteImageViewModelCancelsImageDownloadsWhenNoRemoteImageNeedsIt else {
 				return false
 			}
 			
@@ -179,6 +173,28 @@ public final class DefaultRemoteImageViewModel : RemoteImageViewModel {
 				return true
 			}
 			return false
+		}
+		
+	}
+	
+	/** An objc-friendly wrapper for AnyHashable. */
+	private final class AnyHashableObject : NSObject {
+		
+		let wrapped: AnyHashable
+		
+		init(_ anyHashable: AnyHashable) {
+			self.wrapped = anyHashable
+		}
+		
+		override var hash: Int {
+			return wrapped.hashValue
+		}
+		
+		override func isEqual(_ object: Any?) -> Bool {
+			guard let other = object as? AnyHashableObject else {
+				return false
+			}
+			return wrapped == other.wrapped
 		}
 		
 	}

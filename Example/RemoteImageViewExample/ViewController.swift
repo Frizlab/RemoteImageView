@@ -13,6 +13,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
 
+import Combine
 import UIKit
 
 import RemoteImageView
@@ -21,10 +22,13 @@ import RemoteImageView
 
 class ViewController: UIViewController {
 	
-	@IBOutlet var remoteImageView: RemoteImageView!
-	@IBOutlet var nilView: UIView!
+	@IBOutlet private var remoteImageView: RemoteImageView!
+	@IBOutlet private var nilView: UIView!
 	
-	@IBOutlet var textField: UITextField!
+	@IBOutlet private var labelState: UILabel!
+	@IBOutlet private var textField: UITextField!
+	
+	@IBOutlet private var switchDarkenAndBlur: UISwitch!
 	
 	override func viewDidLoad() {
 		super.viewDidLoad()
@@ -37,17 +41,63 @@ class ViewController: UIViewController {
 		/* Or manually create views. */
 		remoteImageView.viewLoading = UIView(noAutoresizeWithFrame: remoteImageView.bounds, backgroundColor: .lightGray)
 		remoteImageView.viewError = UIView(noAutoresizeWithFrame: remoteImageView.bounds, backgroundColor: .red)
+		
+		remoteImageView.viewModel.imageState
+			.map{ state in
+				switch state {
+					case let (.loadedImage,       animated): return "\(animated ? "→ " : "")Loaded"
+					case let (.loading,           animated): return "\(animated ? "→ " : "")Loading…"
+					case let (.loadingError,      animated): return "\(animated ? "→ " : "")Error"
+					case let (.noImage(fakeLoad), animated): return "\(animated ? "→ " : "")\(fakeLoad ? "Fake Loading…" : "No Image")"
+				}
+			}
+			.assign(to: \.text, on: labelState)
+			.store(in: &observers)
+		
+		if textField.text?.isEmpty ?? true {
+			tappedRandomButton(nil)
+		} else {
+			tappedUseTextField(nil)
+		}
 	}
 	
-	@IBAction func tappedRandomButton(_ sender: Any?) {
-		remoteImageView.setImageFromURL(
+	private static let udKeyLatestURL = "FRZ - RemoteImageViewExample - LatestURL"
+	private static let udKeyDarkenAndBlur = "FRZ - RemoteImageViewExample - UseDarkenAndBlur"
+	
+	private var observers = Set<AnyCancellable>()
+	
+	@IBAction private func switchedDarkenAndBlur(_ sender: Any?) {
+		UserDefaults.standard.set(switchDarkenAndBlur.isOn, forKey: Self.udKeyDarkenAndBlur)
+		tappedUseTextField(nil)
+	}
+	
+	@IBAction private func tappedRandomButton(_ sender: Any?) {
+		setURL(
 			URL(string: "https://random.imagecdn.app/\(Int(remoteImageView.frame.width))/\(Int(remoteImageView.frame.height))")!,
 			useMemoryCache: false
 		)
 	}
 	
-	@IBAction func tappedUseTextField(_ sender: Any?) {
-		remoteImageView.setImageFromURL(URL(string: textField.text ?? ""))
+	@IBAction private func tappedUseTextField(_ sender: Any?) {
+		setURL(URL(string: textField.text ?? ""))
+	}
+	
+	private func setURL(_ url: URL?, useMemoryCache: Bool = true) {
+		if let url = url {
+			remoteImageView.setImageFromRequest(
+				RemoteImageURLRequest(
+					urlRequest: URLRequest(url: url, cachePolicy: .reloadIgnoringLocalAndRemoteCacheData),
+					transform: switchDarkenAndBlur.isOn ? RemoteImageURLRequest.resizeDarkenAndBlurTransform(newSize: remoteImageView.bounds.size, darkenAmount: 0.5, blurRadius: 8) : nil
+				),
+				useMemoryCache: useMemoryCache,
+				animateInitialChange: true,
+				animateDidLoadChange: true
+			)
+			textField.text = url.absoluteString
+			UserDefaults.standard.set(url, forKey: Self.udKeyLatestURL)
+		} else {
+			remoteImageView.setImage(nil)
+		}
 	}
 	
 }

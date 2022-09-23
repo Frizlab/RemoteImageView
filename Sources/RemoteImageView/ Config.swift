@@ -24,8 +24,8 @@ public enum RemoteImageViewConfig {
 	/** The default animation duration in the default remote image view model. */
 	public static var defaultAnimationDuration: TimeInterval = 0.35
 	
-	/** The default session to use for networking in the default remote image view model. */
-	public static var defaultURLSession: URLSession = .shared
+	/** The default URLSession to use for networking to download images from URLRequests. */
+	public static var remoteImageViewModelDefaultURLSession: URLSession = .shared
 	
 	/**
 	 Whether the default remote image view model cancels the image downloads if no remote image views are showing the URL being downloaded.

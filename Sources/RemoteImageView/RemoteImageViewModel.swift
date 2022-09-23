@@ -1,17 +1,10 @@
 /*
-Copyright 2021-2022 François Lamboley
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License. */
+ * RemoteImageViewModel.swift
+ * CommonViews
+ *
+ * Created by François Lamboley on 2021/11/25.
+ * Copyright © 2021 Togever. All rights reserved.
+ */
 
 import Combine
 import Foundation
@@ -19,36 +12,26 @@ import UIKit
 
 
 
+public protocol RemoteImageViewRequest {
+	
+	/** If `nil`, no caching will be used. */
+	var rlCacheKey: AnyHashable? {get}
+	@Sendable func load() async throws -> UIImage
+	
+}
+
+
 @MainActor
 public protocol RemoteImageViewModel {
 	
 	/**
-	 The state of the image (loading, loaded, error, etc.).
-	 
-	 This property is effectively r/w even though it is `{get}` only because `CurrentValueSubject` is a class and its value can be changed.
-	 The value should _not_ be changed manually though!
-	 
-	 TODO: Migrate to `AnyPublisher`, or something else.
-	 Note we need to access the current image state, which an `AnyPublisher` do not give. */
+	 The state of the image (loading, loaded, error, etc.). */
 	var imageState: CurrentValueSubject<(state: RemoteImageState, shouldAnimateChange: Bool), Never> {get}
 	
 	func setFakeLoading(animated: Bool)
+	func setError(_ error: Error, animated: Bool)
 	func setImage(_ image: UIImage?, animated: Bool)
-	func setImageFromURLRequest(_ urlRequest: URLRequest?, useMemoryCache: Bool?, animateInitialChange: Bool, animateDidLoadChange: Bool)
-	
-	/**
-	 Called by the remote image view when it updates its internal views, when animations can be expected.
-	 
-	 If you want to animate the changes (fade from loading view to loaded image for instance),
-	 simply call the `animatable` block in an `UIView.animate` call.
-	 You can animate other views of your own in parallel if you want.
-	 
-	 Use the `transition` parameter to determine what kind of transition you want to do.
-	 
-	 The `cleanup` block must be called when the animation is over.
-	 
-	 - Important: Changing the state of a ``RemoteImageView`` from showing an image to showing another image will _not_ be animated. */
-	func applyUIChanges(animatable: @MainActor @escaping () -> Void, cleanup: @MainActor @escaping () -> Void)
+	func setImageFromRequest(_ request: RemoteImageViewRequest?, useMemoryCache: Bool?, animateInitialChange: Bool, animateDidLoadChange: Bool)
 	
 }
 
@@ -63,7 +46,7 @@ public enum RemoteImageState {
 	 This is an example of when to set `fakeLoading` to true. */
 	case noImage(fakeLoading: Bool)
 	
-	case loading(URLRequest)
+	case loading(RemoteImageViewRequest)
 	case loadedImage(UIImage)
 	case loadingError(Error)
 	
