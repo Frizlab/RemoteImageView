@@ -22,14 +22,6 @@ import RemoteImageView
 
 class ViewController: UIViewController {
 	
-	@IBOutlet private var remoteImageView: RemoteImageView!
-	@IBOutlet private var nilView: UIView!
-	
-	@IBOutlet private var labelState: UILabel!
-	@IBOutlet private var textField: UITextField!
-	
-	@IBOutlet private var switchDarkenAndBlur: UISwitch!
-	
 	override func viewDidLoad() {
 		super.viewDidLoad()
 		
@@ -62,6 +54,9 @@ class ViewController: UIViewController {
 		switchDarkenAndBlur.isOn = ud.bool(forKey: Self.udKeyDarkenAndBlur)
 		textField.text = ud.url(forKey: Self.udKeyLatestURL)?.absoluteString
 		
+		/* For iOS 15- */
+		setupKeyboardConstraint()
+		
 		/* Set URL on the remote image view. */
 		if textField.text?.isEmpty ?? true {
 			tappedRandomButton(nil)
@@ -72,6 +67,17 @@ class ViewController: UIViewController {
 	
 	private static let udKeyLatestURL = "FRZ - RemoteImageViewExample - LatestURL"
 	private static let udKeyDarkenAndBlur = "FRZ - RemoteImageViewExample - UseDarkenAndBlur"
+	
+	@IBOutlet private var remoteImageView: RemoteImageView!
+	@IBOutlet private var nilView: UIView!
+	
+	@IBOutlet private var labelState: UILabel!
+	@IBOutlet private var textField: UITextField!
+	
+	@IBOutlet private var switchDarkenAndBlur: UISwitch!
+	
+	/* To setup the keyboard constraints. */
+	@IBOutlet private var viewAtBottom: UIView!
 	
 	private var observers = Set<AnyCancellable>()
 	
@@ -107,6 +113,12 @@ class ViewController: UIViewController {
 		} else {
 			remoteImageView.setImage(nil)
 		}
+	}
+	
+	private func setupKeyboardConstraint() {
+		/* This is done in storyboard, but because we support iOS 15 we have to do it in code apparently.
+		 * So we ask the storyboard to actually remove the constraint at run time and we add it manually again. */
+		view.keyboardLayoutGuide.topAnchor.constraint(equalToSystemSpacingBelow: viewAtBottom.bottomAnchor, multiplier: 1).isActive = true
 	}
 	
 }
