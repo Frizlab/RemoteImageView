@@ -54,6 +54,12 @@ class ViewController: UIViewController {
 			.assign(to: \.text, on: labelState)
 			.store(in: &observers)
 		
+		/* Update UI from User Defaults. */
+		let ud = UserDefaults.standard
+		switchDarkenAndBlur.isOn = ud.bool(forKey: Self.udKeyDarkenAndBlur)
+		textField.text = ud.url(forKey: Self.udKeyLatestURL)?.absoluteString
+		
+		/* Set URL on the remote image view. */
 		if textField.text?.isEmpty ?? true {
 			tappedRandomButton(nil)
 		} else {
