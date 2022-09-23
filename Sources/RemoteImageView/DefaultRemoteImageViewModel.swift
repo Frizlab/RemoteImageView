@@ -106,13 +106,7 @@ public final class DefaultRemoteImageViewModel : RemoteImageViewModel {
 			} else {
 				download = Download(request: request, forceCancelOnReleased: true)
 			}
-			await withTaskCancellationHandler(handler: {
-				DispatchQueue.main.async{
-					if download.release(), let cacheKey = cacheKey {
-						Self.imagesDownloads[cacheKey] = nil
-					}
-				}
-			}, operation: {
+			await withTaskCancellationHandler(operation: {
 				do {
 					let image = try await download.task.value
 					if !Task.isCancelled {
@@ -130,6 +124,12 @@ public final class DefaultRemoteImageViewModel : RemoteImageViewModel {
 					Self.imagesDownloads[cacheKey] = nil
 				}
 				currentSetImageTask = nil
+			}, onCancel: {
+				DispatchQueue.main.async{
+					if download.release(), let cacheKey = cacheKey {
+						Self.imagesDownloads[cacheKey] = nil
+					}
+				}
 			})
 		})
 	}
