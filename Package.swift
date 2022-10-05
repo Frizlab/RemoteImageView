@@ -14,6 +14,8 @@ let package = Package(
 		.target(name: "RemoteImageView", dependencies: [
 			.product(name: "OperationAwaiting",   package: "OperationAwaiting"),
 			.product(name: "URLRequestOperation", package: "URLRequestOperation")
+		], swiftSettings: [
+			.unsafeFlags(["-Xfrontend", "-warn-concurrency", "-Xfrontend", "-enable-actor-data-race-checks"])
 		])
 	]
 )
