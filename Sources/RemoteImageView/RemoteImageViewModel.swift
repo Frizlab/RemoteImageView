@@ -12,7 +12,7 @@ import UIKit
 
 
 
-public protocol RemoteImageViewRequest {
+public protocol Request {
 	
 	/** If `nil`, no caching will be used. */
 	var rlCacheKey: AnyHashable? {get}
@@ -21,33 +21,70 @@ public protocol RemoteImageViewRequest {
 }
 
 
-@MainActor
-public protocol RemoteImageViewModel {
+public protocol ImageLoader {
 	
 	/**
-	 The state of the image (loading, loaded, error, etc.). */
-	var imageState: CurrentValueSubject<(state: RemoteImageState, shouldAnimateChange: Bool), Never> {get}
-	
-	func setFakeLoading(animated: Bool)
-	func setError(_ error: Error, animated: Bool)
-	func setImage(_ image: UIImage?, animated: Bool)
-	func setImageFromRequest(_ request: RemoteImageViewRequest?, useMemoryCache: Bool?, animateInitialChange: Bool, animateDidLoadChange: Bool)
+	 Load the given image and return a publisher giving the loading state. */
+	func loadImage(from request: any Request, useMemoryCache: Bool?) -> any Publisher<UIImage, Error>
 	
 }
 
 
-public enum RemoteImageState {
+@MainActor
+public struct ViewModel {
 	
-	/**
-	 No image set in the remote image view, with a parameter to specify the remote image view should show the loading view instead of the nil one.
-	 
-	 When loading a view, you might be waiting for some data from a back-end to know the URL to display in your remote image view.
-	 The image view should usually show the loading view instead of the nil one while the URL is unknown.
-	 This is an example of when to set `fakeLoading` to true. */
-	case noImage(fakeLoading: Bool)
+	public enum ShownView {
+		
+		case noImage
+		case loading
+		case image(UIImage)
+		case error
+		
+	}
 	
-	case loading(RemoteImageViewRequest)
-	case loadedImage(UIImage)
-	case loadingError(Error)
+	public typealias State = (shownView: ShownView, shouldAnimateChange: Bool)
+	public var statePublisher: any Publisher<State, Never> {statePublisherPublisher.switchToLatest()}
+	
+	public let imageLoader: any ImageLoader
+	
+	public init(shownView: ShownView, imageLoader: any ImageLoader = DefaultImageLoader()) {
+		self.statePublisherPublisher = .init(Just((shownView, false)).eraseToAnyPublisher())
+		self.imageLoader = imageLoader
+	}
+	
+	func setLoading(animated: Bool) {
+		statePublisherPublisher.send(Just((.loading, animated)).eraseToAnyPublisher())
+	}
+	
+	func setError(_ error: Error, animated: Bool) {
+		statePublisherPublisher.send(Just((.error, animated)).eraseToAnyPublisher())
+	}
+	
+	func setImage(_ image: UIImage?, animated: Bool) {
+		let shownView: ShownView
+		if let image {shownView = .image(image)}
+		else         {shownView = .noImage}
+		statePublisherPublisher.send(Just((shownView, animated)).eraseToAnyPublisher())
+	}
+	
+	func setImageFromRequest(_ request: any Request, useMemoryCache: Bool?, animateInitialChange: Bool, animateDidLoadChange: Bool) {
+		statePublisherPublisher.value = Just((.loading, animateInitialChange)).eraseToAnyPublisher()
+		statePublisherPublisher.value = imageLoader.loadImage(from: request, useMemoryCache: useMemoryCache).eraseToAnyPublisher()
+			.map{ Result<UIImage, Error>.success($0) }
+			.catch{ Just(.failure($0)) }
+			.map{ imageResult in
+				switch imageResult {
+					case .failure:            return (ShownView.error,        animateDidLoadChange)
+					case .success(let image): return (ShownView.image(image), animateDidLoadChange)
+				}
+			}
+			.merge(with: Empty<State, Never>())
+			.share()
+			.eraseToAnyPublisher()
+	}
+	
+	/* For iOS 16. */
+//	private let statePublisherPublisher: CurrentValueSubject<any Publisher<State, Never>, Never>
+	private let statePublisherPublisher: CurrentValueSubject<AnyPublisher<State, Never>, Never>
 	
 }

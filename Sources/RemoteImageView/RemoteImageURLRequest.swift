@@ -16,7 +16,7 @@ import URLRequestOperation
 
 
 
-public struct RemoteImageURLRequest : RemoteImageViewRequest, Hashable {
+public struct RemoteImageURLRequest : Request, Hashable {
 	
 	public static func resizeDarkenAndBlurTransform(newSize: CGSize, contentMode: UIView.ContentMode = .scaleAspectFill, darkenAmount: CGFloat, blurRadius: CGFloat) -> ((UIImage) async -> UIImage, String) {
 		let block = { (image: UIImage) -> UIImage in

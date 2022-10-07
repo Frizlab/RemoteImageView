@@ -37,13 +37,13 @@ class ViewController: UIViewController {
 		/* Set the content mode of the image view. */
 		remoteImageView.viewImage.contentMode = .scaleAspectFill /* This is the default. */
 		
-		remoteImageView.viewModel.imageState
+		remoteImageView.viewModel.statePublisher.eraseToAnyPublisher()
 			.map{ state in
 				switch state {
-					case let (.loadedImage,       animated): return "\(animated ? "→ " : "")Loaded"
-					case let (.loading,           animated): return "\(animated ? "→ " : "")Loading…"
-					case let (.loadingError,      animated): return "\(animated ? "→ " : "")Error"
-					case let (.noImage(fakeLoad), animated): return "\(animated ? "→ " : "")\(fakeLoad ? "Fake Loading…" : "No Image")"
+					case let (.image,   animated): return "\(animated ? "→ " : "")Loaded"
+					case let (.loading, animated): return "\(animated ? "→ " : "")Loading…"
+					case let (.error,   animated): return "\(animated ? "→ " : "")Error"
+					case let (.noImage, animated): return "\(animated ? "→ " : "")No Image"
 				}
 			}
 			.assign(to: \.text, on: labelState)

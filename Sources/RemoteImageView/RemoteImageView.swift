@@ -63,7 +63,7 @@ public final class RemoteImageView : UIView {
 			
 			viewNil.alpha = 0
 			addFullSizedSubview(viewNil, at: 0)
-			updateSubviews(state: (viewModel.imageState.value.state, false))
+//			updateSubviews(state: (viewModel.statePublisher.value.state, false))
 		}
 	}
 	
@@ -79,7 +79,7 @@ public final class RemoteImageView : UIView {
 			
 			viewLoading.alpha = 0
 			addFullSizedSubview(viewLoading, at: 0)
-			updateSubviews(state: (viewModel.imageState.value.state, false))
+//			updateSubviews(state: (viewModel.statePublisher.value.state, false))
 		}
 	}
 	
@@ -95,18 +95,11 @@ public final class RemoteImageView : UIView {
 			
 			viewError.alpha = 0
 			addFullSizedSubview(viewError, at: 0)
-			updateSubviews(state: (viewModel.imageState.value.state, false))
+//			updateSubviews(state: (viewModel.statePublisher.value.state, false))
 		}
 	}
 	
-	public var viewModel: any RemoteImageViewModel = DefaultRemoteImageViewModel() {
-		willSet {
-			remoteImageStateObserver = nil
-		}
-		didSet {
-			updateViewModelBindings()
-		}
-	}
+	public let viewModel = ViewModel(shownView: .noImage)
 	
 	public override var backgroundColor: UIColor? {
 		didSet {
@@ -162,8 +155,8 @@ public final class RemoteImageView : UIView {
 		updateViewModelBindings()
 	}
 	
-	public func setFakeLoading(animated: Bool = false) {
-		viewModel.setFakeLoading(animated: animated)
+	public func setLoading(animated: Bool = false) {
+		viewModel.setLoading(animated: animated)
 	}
 	
 	public func setImage(_ image: UIImage?, animated: Bool = false) {
@@ -178,11 +171,13 @@ public final class RemoteImageView : UIView {
 		setImageFromRequest(urlRequest.flatMap{ RemoteImageURLRequest(urlRequest: $0) }, nilIsLoading: nilIsLoading, useMemoryCache: useMemoryCache, animateInitialChange: animateInitialChange, animateDidLoadChange: animateDidLoadChange)
 	}
 	
-	public func setImageFromRequest(_ request: RemoteImageViewRequest?, nilIsLoading: Bool = false, useMemoryCache: Bool? = nil, animateInitialChange: Bool = false, animateDidLoadChange: Bool = true) {
-		if nilIsLoading && request == nil {
-			setFakeLoading(animated: animateInitialChange)
-		} else {
+	public func setImageFromRequest(_ request: (any Request)?, nilIsLoading: Bool = false, useMemoryCache: Bool? = nil, animateInitialChange: Bool = false, animateDidLoadChange: Bool = true) {
+		if let request {
 			viewModel.setImageFromRequest(request, useMemoryCache: useMemoryCache, animateInitialChange: animateInitialChange, animateDidLoadChange: animateDidLoadChange)
+		} else if nilIsLoading {
+			setLoading(animated: animateInitialChange)
+		} else {
+			setImage(nil, animated: animateInitialChange)
 		}
 	}
 	
@@ -194,17 +189,17 @@ public final class RemoteImageView : UIView {
 	
 	private var snapView: UIView?
 	private var animating = false
-	private var nextState: (state: RemoteImageState, shouldAnimateChange: Bool)?
+	private var nextState: ViewModel.State?
 	
 	private func updateViewModelBindings() {
 		assert(Thread.isMainThread)
 		
-		remoteImageStateObserver = viewModel.imageState
+		remoteImageStateObserver = viewModel.statePublisher.eraseToAnyPublisher()
 			.receive(on: DispatchQueue.main)
 			.sink{ [weak self] in self?.updateSubviews(state: $0) }
 	}
 	
-	private func updateSubviews(state: (state: RemoteImageState, shouldAnimateChange: Bool)) {
+	private func updateSubviews(state: ViewModel.State) {
 		assert(Thread.isMainThread)
 		
 		guard !animating else {
@@ -216,16 +211,16 @@ public final class RemoteImageView : UIView {
 		}
 		
 		switch state {
-			case let (.noImage(fakeLoading), animated) where !fakeLoading:
+			case let (.noImage, animated):
 				showNilSubview(animated: animated)
 				
-			case let (.loadedImage(image), animated):
+			case let (.image(image), animated):
 				showImageSubview(image, animated: animated)
 				
-			case let (.loading, animated), let (.noImage, animated):
+			case let (.loading, animated):
 				showLoadingSubview(animated: animated)
 				
-			case let (.loadingError, animated):
+			case let (.error, animated):
 				showErrorSubview(animated: animated)
 		}
 	}
