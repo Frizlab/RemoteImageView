@@ -43,7 +43,12 @@ public struct ViewModel {
 	}
 	
 	public typealias State = (shownView: ShownView, shouldAnimateChange: Bool)
-	public var statePublisher: any Publisher<State, Never> {statePublisherPublisher.switchToLatest()}
+	public var statePublisher: any Publisher<State, Never> {
+		statePublisherPublisher
+			.switchToLatest()
+			.flatMap{ CurrentValueSubject($0) }
+			.share()
+	}
 	
 	public let imageLoader: any ImageLoader
 	
@@ -68,18 +73,16 @@ public struct ViewModel {
 	}
 	
 	func setImageFromRequest(_ request: any Request, useMemoryCache: Bool?, animateInitialChange: Bool, animateDidLoadChange: Bool) {
-		statePublisherPublisher.value = Just((.loading, animateInitialChange)).eraseToAnyPublisher()
 		statePublisherPublisher.value = imageLoader.loadImage(from: request, useMemoryCache: useMemoryCache).eraseToAnyPublisher()
 			.map{ Result<UIImage, Error>.success($0) }
 			.catch{ Just(.failure($0)) }
 			.map{ imageResult in
 				switch imageResult {
-					case .failure:            return (ShownView.error,        animateDidLoadChange)
-					case .success(let image): return (ShownView.image(image), animateDidLoadChange)
+					case .failure:            return (ShownView.error,        animateDidLoadChange/* TODO: Is this did load or initial? */)
+					case .success(let image): return (ShownView.image(image), animateDidLoadChange/* TODO: Is this did load or initial? */)
 				}
 			}
-			.merge(with: Empty<State, Never>())
-			.share()
+			.prepend([(.loading, animateInitialChange)]) /* TODO: This should be a conditional prepend… */
 			.eraseToAnyPublisher()
 	}
 	
